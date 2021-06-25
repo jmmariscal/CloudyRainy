@@ -25,13 +25,25 @@ class WeatherViewController: UIViewController {
         updateViews()
     }
     
+    var numberFormatter: NumberFormatter {
+        let numberFormatter = NumberFormatter()
+        numberFormatter.maximumFractionDigits = 0
+        return numberFormatter
+    }
+    
+    func convertToF(_ temp: Double) -> Double {
+        let celcius = temp - 273.5
+        return celcius * 9 / 5 + 32
+    }
+    
     private func updateViews() {
         guard let weather = weather else { return }
         
+        let tempInF: String = numberFormatter.string(for: convertToF(weather.main.temp)) ?? "0"
+
         cityLabel.text = weather.name
-        currentDegreesLabel.text = String(weather.main.temp)
-//        currentDegreesLabel.text = weather.cityTemp.map({ $0.cityTemp.temp.capitalized })
-        weatherDescriptionLabel.text = weather.weather.description
+        currentDegreesLabel.text = tempInF
+        weatherDescriptionLabel.text = String(weather.weather[0].description.capitalized)
     }
 
 }

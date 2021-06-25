@@ -17,7 +17,7 @@ struct Weather: Codable {
     let description: String
 }
 struct Main: Codable {
-    let temp: Float
+    let temp: Double
 }
 
 
