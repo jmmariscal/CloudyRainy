@@ -8,16 +8,22 @@
 import Foundation
 import UIKit
 
+protocol ForecastResultDelegate: AnyObject{
+    func didGetData(results: Result<Forecast, NetworkError>)
+}
+
+enum NetworkError: Error {
+    case unauthorized
+    case noData
+    case decodeFailed
+    case otherError(Error)
+}
+
 class ForecastResultController {
     
     var weather: Forecast?
     
-    enum NetworkError: Error {
-        case unauthorized
-        case noData
-        case decodeFailed
-        case otherError(Error)
-    }
+    weak var delegate: ForecastResultDelegate?
     
     enum HTTPMethod: String {
         case get = "GET"
@@ -26,7 +32,7 @@ class ForecastResultController {
         case delete = "DELETE"
     }
     
-    func searchWeatherByCity(searchTerm: String, completion: @escaping (Result<Forecast, NetworkError>) -> Void) {
+    func searchWeatherByCity(searchTerm: String) {
         let baseURL = "https://api.openweathermap.org/data/2.5/weather?q=\(searchTerm)&appid=5e2fae3f2addb2a80f18f265838cd802"
         var request = URLRequest(url: URL(string: baseURL)!)
         request.httpMethod = HTTPMethod.get.rawValue
@@ -35,17 +41,17 @@ class ForecastResultController {
         URLSession.shared.dataTask(with: request) { (data, response, error) in
             if let response = response as? HTTPURLResponse,
                response.statusCode == 401 {
-                completion(.failure(.unauthorized))
+                self.delegate?.didGetData(results: .failure(.unauthorized))
                 return
             }
             
             guard error == nil else {
-                completion(.failure(.otherError(error!)))
+                self.delegate?.didGetData(results: .failure(.otherError(error!)))
                 return
             }
         
             guard let data = data else {
-                completion(.failure(.noData))
+                self.delegate?.didGetData(results: .failure(.noData))
                 return
             }
             
@@ -53,9 +59,9 @@ class ForecastResultController {
             let decoder = JSONDecoder()
             do {
                 let weather = try decoder.decode(Forecast.self, from: data)
-                completion(.success(weather))
+                self.delegate?.didGetData(results: .success(weather))
             } catch {
-                completion(.failure(.decodeFailed))
+                self.delegate?.didGetData(results: .failure(.decodeFailed))
                 return
             }
         }.resume()

@@ -20,7 +20,7 @@ class WeatherViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        weatherController.delegate = self
         searchBar.delegate = self
         updateViews()
     }
@@ -48,20 +48,22 @@ class WeatherViewController: UIViewController {
 
 }
 
+extension WeatherViewController: ForecastResultDelegate {
+    func didGetData(results: Result<Forecast, NetworkError>) {
+        do {
+            let weather = try results.get()
+            self.weather = weather
+            self.updateViews()
+        } catch {
+            print("\(error)")
+        }
+    }
+}
+
 extension WeatherViewController: UISearchBarDelegate {
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         guard let searchTerm = searchBar.text else { return }
         print("Search Bar clicked")
-        weatherController.searchWeatherByCity(searchTerm: searchTerm) { (result) in
-            do {
-                let weather = try result.get()
-                DispatchQueue.main.async {
-                    self.weather = weather
-                    self.updateViews()
-                }
-            } catch {
-                print("\(error)")
-            }
-        }
+        weatherController.searchWeatherByCity(searchTerm: searchTerm)
     }
 }
